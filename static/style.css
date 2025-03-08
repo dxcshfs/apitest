@@ -1,0 +1,103 @@
+/* API测试工具自定义样式 */
+
+/* 主体样式 */
+body {
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    flex: 1;
+}
+
+/* 导航栏样式 */
+.navbar-brand {
+    font-weight: bold;
+}
+
+/* 卡片样式 */
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border-radius: 0.5rem;
+    border: none;
+}
+
+.card-header {
+    background-color: #fff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    border-top-left-radius: 0.5rem !important;
+    border-top-right-radius: 0.5rem !important;
+}
+
+/* API列表样式 */
+.list-group-item {
+    border-left: none;
+    border-right: none;
+    padding: 1rem;
+    transition: all 0.2s ease;
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+
+.list-group-item.active {
+    background-color: #f8f9fa;
+    color: #212529;
+    border-color: rgba(0, 0, 0, 0.125);
+    border-left: 4px solid #007bff;
+}
+
+/* JSON响应样式 */
+.json-response {
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    font-family: 'Courier New', Courier, monospace;
+    white-space: pre-wrap;
+    max-height: 500px;
+    overflow-y: auto;
+    font-size: 0.875rem;
+    border: 1px solid #dee2e6;
+}
+
+/* 参数行样式 */
+.param-row {
+    margin-bottom: 0.75rem;
+}
+
+/* 按钮样式 */
+.btn {
+    border-radius: 0.25rem;
+}
+
+/* 表单控件样式 */
+.form-control, .form-select {
+    border-radius: 0.25rem;
+}
+
+/* 响应状态码样式 */
+.badge {
+    font-weight: normal;
+    padding: 0.5em 0.75em;
+}
+
+/* 历史记录样式 */
+#history-container .card {
+    margin-bottom: 1rem;
+}
+
+#history-container .json-response {
+    max-height: 150px;
+}
+
+/* 页脚样式 */
+footer {
+    margin-top: auto;
+}

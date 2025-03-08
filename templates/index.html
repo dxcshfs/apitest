@@ -1,0 +1,664 @@
+{% extends "base.html" %}
+
+{% block title %}API测试工具 - 首页{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h1>API测试工具</h1>
+    </div>
+    <div class="col-md-6 text-end">
+        <a href="{{ url_for('new_config') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> 添加新API
+        </a>
+    </div>
+</div>
+
+{% if configs %}
+    <div class="row">
+        <div class="col-md-4">
+            <div class="list-group" id="api-list">
+                {% for config in configs %}
+                <a href="#" class="list-group-item list-group-item-action api-item" data-config-id="{{ config.id }}">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">{{ config.name }}</h5>
+                        <small>{{ config.method }}</small>
+                    </div>
+                    <p class="mb-1 text-truncate">{{ config.url }}</p>
+                    <small class="text-muted">创建于: {{ config.created_at }}</small>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card" id="api-detail-card" style="display: none;">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0" id="api-name"></h5>
+                    <div>
+                        <button class="btn btn-sm btn-outline-secondary" id="view-history-btn">
+                            <i class="fas fa-history"></i> 历史记录
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary" id="edit-config-btn">
+                            <i class="fas fa-edit"></i> 编辑
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" id="delete-config-btn">
+                            <i class="fas fa-trash"></i> 删除
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form id="api-form">
+                        <div class="mb-3">
+                            <label class="form-label">API地址</label>
+                            <input type="text" class="form-control" id="api-url" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">请求方法</label>
+                            <input type="text" class="form-control" id="api-method" readonly>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">请求头</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="header-key" placeholder="键">
+                                <input type="text" class="form-control" id="header-value" placeholder="值">
+                                <button class="btn btn-outline-secondary" type="button" id="add-header-btn">添加</button>
+                            </div>
+                            <div class="mt-2" id="headers-container"></div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">参数</label>
+                            <div id="params-container"></div>
+                            
+                            <div class="input-group mt-2">
+                                <input type="text" class="form-control" id="param-key" placeholder="参数名">
+                                <input type="text" class="form-control" id="param-value" placeholder="参数值">
+                                <select class="form-select" id="param-type">
+                                    <option value="query">查询参数</option>
+                                    <option value="body">请求体参数</option>
+                                </select>
+                                <button class="btn btn-outline-secondary" type="button" id="add-param-btn">添加</button>
+                            </div>
+                        </div>
+                        
+                        <button type="button" class="btn btn-primary" id="execute-btn">
+                            <i class="fas fa-play"></i> 执行请求
+                        </button>
+                    </form>
+                    
+                    <div class="mt-4" id="response-container" style="display: none;">
+                        <h5>响应结果</h5>
+                        <div class="d-flex justify-content-between mb-2">
+                            <div>
+                                <span class="badge bg-secondary me-2" id="status-code"></span>
+                                <span class="text-muted" id="execution-time"></span>
+                            </div>
+                            <button class="btn btn-sm btn-outline-secondary" id="copy-response-btn">
+                                <i class="fas fa-copy"></i> 复制
+                            </button>
+                        </div>
+                        <div class="json-response" id="response-data"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-3" id="history-card" style="display: none;">
+                <div class="card-header">
+                    <h5 class="mb-0">历史记录</h5>
+                </div>
+                <div class="card-body">
+                    <div id="history-container">
+                        <p class="text-center text-muted">加载中...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card" id="welcome-card">
+                <div class="card-body text-center">
+                    <h4 class="mb-3">欢迎使用API测试工具</h4>
+                    <p>请从左侧选择一个API配置或添加新的API配置</p>
+                    <a href="{{ url_for('new_config') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> 添加新API
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div class="card">
+        <div class="card-body text-center">
+            <h4 class="mb-3">欢迎使用API测试工具</h4>
+            <p>您还没有添加任何API配置</p>
+            <a href="{{ url_for('new_config') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> 添加新API
+            </a>
+        </div>
+    </div>
+{% endif %}
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="delete-modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">确认删除</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除这个API配置吗？此操作不可撤销。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete-btn">删除</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 添加全局错误处理
+    window.onerror = function(message, source, lineno, colno, error) {
+        console.error('全局错误:', message, 'at', source, lineno, colno, error);
+        alert('页面发生错误，请刷新页面重试。错误信息: ' + message);
+        return true;
+    };
+    
+    // 检查jQuery是否正确加载（更宽松的检测）
+    function checkJQuery() {
+        if (typeof jQuery === 'undefined') {
+            console.warn('警告: jQuery可能未完全加载，将在1秒后重试');
+            setTimeout(function() {
+                if (typeof jQuery === 'undefined') {
+                    console.error('错误: jQuery未能在重试后加载');
+                    // 使用原生JavaScript显示错误消息
+                    var errorDiv = document.createElement('div');
+                    errorDiv.className = 'alert alert-warning m-3';
+                    errorDiv.innerHTML = '<h4>页面加载警告</h4><p>jQuery库可能未完全加载。如果页面功能异常，请尝试刷新页面。</p><button onclick="window.location.reload()" class="btn btn-sm btn-warning">刷新页面</button>';
+                    document.body.insertBefore(errorDiv, document.body.firstChild);
+                } else {
+                    console.log('jQuery已在重试后加载，版本:', jQuery.fn.jquery);
+                    initApp(); // 重新初始化应用
+                }
+            }, 1000);
+        } else {
+            console.log('jQuery已加载，版本:', jQuery.fn.jquery);
+            return true;
+        }
+        return false;
+    }
+    
+    // 定义全局变量，用于跟踪应用是否已初始化
+    window.appInitialized = false;
+    
+    // 使用jQuery的ready函数和一个备用的DOMContentLoaded事件监听器
+    function initApp() {
+        // 如果应用已经初始化，则不再重复初始化
+        if (window.appInitialized) {
+            console.log('应用已经初始化，跳过重复初始化');
+            return;
+        }
+        
+        // 标记应用已初始化
+        window.appInitialized = true;
+        console.log('应用初始化开始');
+        let currentConfigId = null;
+        let configParams = [];
+        let customHeaders = {};
+        let customParams = {};
+        
+        // 添加页面状态指示器
+        $('body').append('<div id="page-status" style="position: fixed; bottom: 10px; right: 10px; z-index: 9999; padding: 5px 10px; background-color: #28a745; color: white; border-radius: 3px; display: none;">页面已就绪</div>');
+        $('#page-status').fadeIn().delay(2000).fadeOut();
+        
+        // 使用事件委托处理API项点击，确保动态添加的项也能响应
+        $(document).on('click', '.api-item', function(e) {
+            e.preventDefault();
+            console.log('API项被点击:', $(this).data('config-id'));
+            
+            try {
+                // 高亮选中项
+                $('.api-item').removeClass('active');
+                $(this).addClass('active');
+                
+                // 获取配置ID
+                currentConfigId = $(this).data('config-id');
+                console.log('当前选中的配置ID:', currentConfigId);
+                
+                if (!currentConfigId) {
+                    console.error('错误: 未能获取配置ID');
+                    alert('错误: 未能获取配置ID，请刷新页面重试');
+                    return;
+                }
+                
+                // 隐藏欢迎卡片和历史记录
+                $('#welcome-card').hide();
+                $('#history-card').hide();
+                
+                // 显示API详情卡片
+                $('#api-detail-card').show();
+                console.log('API详情卡片显示状态:', $('#api-detail-card').is(':visible'));
+                
+                // 清空自定义参数和响应
+                customHeaders = {};
+                customParams = {};
+                $('#headers-container').empty();
+                $('#response-container').hide();
+                
+                // 加载API配置
+                loadApiConfig(currentConfigId);
+            } catch (error) {
+                console.error('点击API项时发生错误:', error);
+                alert('加载API配置时发生错误: ' + error.message);
+            }
+        });
+        
+        // 加载API配置
+        function loadApiConfig(configId) {
+            console.log('开始加载API配置:', configId);
+            
+            // 显示加载指示器
+            $('#api-detail-card .card-body').prepend('<div id="loading-indicator" class="text-center mb-3"><i class="fas fa-spinner fa-spin"></i> 正在加载配置...</div>');
+            
+            $.getJSON(`/config/${configId}`)
+                .done(function(data) {
+                    console.log('成功获取API配置:', data);
+                    
+                    // 移除加载指示器
+                    $('#loading-indicator').remove();
+                    
+                    // 设置基本信息
+                    $('#api-name').text(data.config.name);
+                    $('#api-url').val(data.config.url);
+                    $('#api-method').val(data.config.method);
+                    
+                    // 保存参数
+                    configParams = data.params;
+                    
+                    // 显示参数
+                    $('#params-container').empty();
+                    if (data.params && data.params.length > 0) {
+                        data.params.forEach(function(param) {
+                            const paramHtml = `
+                                <div class="param-row">
+                                    <div class="input-group">
+                                        <span class="input-group-text">${param.param_name}</span>
+                                        <input type="text" class="form-control param-input"
+                                               data-name="${param.param_name}"
+                                               data-type="${param.param_type}"
+                                               value="${param.param_value || ''}">
+                                        <span class="input-group-text">${param.param_type === 'query' ? '查询参数' : '请求体参数'}</span>
+                                    </div>
+                                </div>
+                            `;
+                            $('#params-container').append(paramHtml);
+                        });
+                    } else {
+                        $('#params-container').append('<p class="text-muted">无默认参数</p>');
+                    }
+                    
+                    // 显示请求头
+                    try {
+                        const headers = JSON.parse(data.config.headers || '{}');
+                        $('#headers-container').empty();
+                        
+                        if (Object.keys(headers).length > 0) {
+                            Object.keys(headers).forEach(function(key) {
+                                const headerHtml = `
+                                    <div class="param-row">
+                                        <div class="input-group">
+                                            <span class="input-group-text">${key}</span>
+                                            <input type="text" class="form-control header-input"
+                                                   data-name="${key}"
+                                                   value="${headers[key] || ''}">
+                                            <button class="btn btn-outline-danger remove-header-btn" type="button">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                `;
+                                $('#headers-container').append(headerHtml);
+                            });
+                        }
+                    } catch (e) {
+                        console.error('解析请求头失败:', e);
+                        $('#headers-container').append(`<div class="alert alert-danger">解析请求头失败: ${e.message}</div>`);
+                    }
+                })
+                .fail(function(xhr, status, error) {
+                    // 移除加载指示器
+                    $('#loading-indicator').remove();
+                    
+                    console.error('获取API配置失败:', status, error);
+                    $('#api-detail-card .card-body').prepend(`
+                        <div class="alert alert-danger">
+                            <strong>加载API配置失败</strong><br>
+                            ${xhr.responseJSON ? xhr.responseJSON.error : error}
+                        </div>
+                    `);
+                });
+        }
+        
+        // 添加请求头
+        $('#add-header-btn').click(function() {
+            const key = $('#header-key').val().trim();
+            const value = $('#header-value').val().trim();
+            
+            if (key) {
+                const headerHtml = `
+                    <div class="param-row">
+                        <div class="input-group">
+                            <span class="input-group-text">${key}</span>
+                            <input type="text" class="form-control header-input" 
+                                   data-name="${key}" 
+                                   value="${value}">
+                            <button class="btn btn-outline-danger remove-header-btn" type="button">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                $('#headers-container').append(headerHtml);
+                
+                // 添加到自定义请求头
+                customHeaders[key] = value;
+                
+                // 清空输入框
+                $('#header-key').val('');
+                $('#header-value').val('');
+            }
+        });
+        
+        // 删除请求头
+        $(document).on('click', '.remove-header-btn', function() {
+            const key = $(this).closest('.param-row').find('.header-input').data('name');
+            delete customHeaders[key];
+            $(this).closest('.param-row').remove();
+        });
+        
+        // 添加参数
+        $('#add-param-btn').click(function() {
+            const key = $('#param-key').val().trim();
+            const value = $('#param-value').val().trim();
+            const type = $('#param-type').val();
+            
+            if (key) {
+                const paramHtml = `
+                    <div class="param-row custom-param">
+                        <div class="input-group">
+                            <span class="input-group-text">${key}</span>
+                            <input type="text" class="form-control custom-param-input" 
+                                   data-name="${key}" 
+                                   data-type="${type}"
+                                   value="${value}">
+                            <span class="input-group-text">${type === 'query' ? '查询参数' : '请求体参数'}</span>
+                            <button class="btn btn-outline-danger remove-param-btn" type="button">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                $('#params-container').append(paramHtml);
+                
+                // 添加到自定义参数
+                customParams[key] = {
+                    type: type,
+                    value: value
+                };
+                
+                // 清空输入框
+                $('#param-key').val('');
+                $('#param-value').val('');
+            }
+        });
+        
+        // 删除参数
+        $(document).on('click', '.remove-param-btn', function() {
+            const key = $(this).closest('.param-row').find('.custom-param-input').data('name');
+            delete customParams[key];
+            $(this).closest('.param-row').remove();
+        });
+        
+        // 执行请求
+        $('#execute-btn').click(function() {
+            console.log('执行请求按钮被点击');
+            
+            if (!currentConfigId) {
+                console.error('错误: 未选择API配置');
+                alert('请先选择一个API配置');
+                return;
+            }
+            
+            // 移除之前的错误信息
+            $('#request-error').remove();
+            
+            // 显示加载状态
+            const $btn = $(this);
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> 执行中...');
+            
+            try {
+                // 获取修改后的默认参数值
+                $('.param-input').each(function() {
+                    const name = $(this).data('name');
+                    const type = $(this).data('type');
+                    const value = $(this).val();
+                    
+                    if (name) {
+                        customParams[name] = {
+                            type: type,
+                            value: value
+                        };
+                    }
+                });
+                
+                // 获取修改后的默认请求头
+                $('.header-input').each(function() {
+                    const name = $(this).data('name');
+                    const value = $(this).val();
+                    
+                    if (name) {
+                        customHeaders[name] = value;
+                    }
+                });
+                
+                console.log('准备发送请求:', {
+                    configId: currentConfigId,
+                    headers: customHeaders,
+                    params: customParams
+                });
+                
+                // 发送请求
+                $.ajax({
+                    url: `/api/execute/${currentConfigId}`,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        headers: customHeaders,
+                        params: customParams
+                    }),
+                    timeout: 60000, // 60秒超时
+                    success: function(response) {
+                        console.log('请求成功:', response);
+                        
+                        // 显示响应
+                        $('#response-container').show();
+                        $('#status-code').text(`状态码: ${response.status_code}`);
+                        $('#execution-time').text(`执行时间: ${response.execution_time.toFixed(2)}秒`);
+                        
+                        // 格式化JSON
+                        try {
+                            const jsonObj = typeof response.response === 'string' ? JSON.parse(response.response) : response.response;
+                            $('#response-data').text(JSON.stringify(jsonObj, null, 2));
+                        } catch (e) {
+                            console.warn('响应不是有效的JSON:', e);
+                            $('#response-data').text(response.response);
+                        }
+                        
+                        // 滚动到响应区域
+                        $('html, body').animate({
+                            scrollTop: $('#response-container').offset().top - 100
+                        }, 500);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('请求失败:', status, error, xhr);
+                        
+                        // 显示错误
+                        $('#response-container').show();
+                        $('#status-code').text(`错误: ${status}`);
+                        $('#execution-time').text('');
+                        
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            $('#response-data').text(response.error || '请求失败');
+                        } catch (e) {
+                            console.warn('解析错误响应失败:', e);
+                            $('#response-data').text(xhr.responseText || `请求失败: ${error}`);
+                        }
+                        
+                        // 添加错误提示
+                        $('#api-form').prepend(`
+                            <div id="request-error" class="alert alert-danger mb-3">
+                                <strong>请求失败</strong><br>
+                                ${status === 'timeout' ? '请求超时，请检查API地址是否正确' : (xhr.responseJSON ? xhr.responseJSON.error : error)}
+                            </div>
+                        `);
+                    },
+                    complete: function() {
+                        console.log('请求完成');
+                        // 恢复按钮状态
+                        $btn.prop('disabled', false).html('<i class="fas fa-play"></i> 执行请求');
+                    }
+                });
+            } catch (e) {
+                console.error('执行请求时发生错误:', e);
+                $btn.prop('disabled', false).html('<i class="fas fa-play"></i> 执行请求');
+                
+                // 添加错误提示
+                $('#api-form').prepend(`
+                    <div id="request-error" class="alert alert-danger mb-3">
+                        <strong>执行请求时发生错误</strong><br>
+                        ${e.message}
+                    </div>
+                `);
+            }
+        });
+        
+        // 复制响应
+        $('#copy-response-btn').click(function() {
+            const responseText = $('#response-data').text();
+            navigator.clipboard.writeText(responseText).then(function() {
+                alert('已复制到剪贴板');
+            });
+        });
+        
+        // 编辑配置
+        $('#edit-config-btn').click(function() {
+            if (currentConfigId) {
+                window.location.href = `/config/edit/${currentConfigId}`;
+            }
+        });
+        
+        // 删除配置
+        $('#delete-config-btn').click(function() {
+            if (currentConfigId) {
+                $('#delete-modal').modal('show');
+            }
+        });
+        
+        // 确认删除
+        $('#confirm-delete-btn').click(function() {
+            if (currentConfigId) {
+                $.post(`/config/delete/${currentConfigId}`, function() {
+                    window.location.reload();
+                });
+            }
+        });
+        
+        // 查看历史记录
+        $('#view-history-btn').click(function() {
+            if (!currentConfigId) return;
+            
+            // 切换显示
+            $('#history-card').toggle();
+            
+            if ($('#history-card').is(':visible')) {
+                // 加载历史记录
+                $.getJSON(`/api/history/${currentConfigId}`, function(data) {
+                    $('#history-container').empty();
+                    
+                    if (data.length === 0) {
+                        $('#history-container').html('<p class="text-center text-muted">暂无历史记录</p>');
+                        return;
+                    }
+                    
+                    // 显示历史记录
+                    data.forEach(function(item, index) {
+                        const requestData = JSON.parse(item.request_data);
+                        const historyHtml = `
+                            <div class="card mb-3">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <span>
+                                        <span class="badge ${item.status_code >= 200 && item.status_code < 300 ? 'bg-success' : 'bg-danger'}">
+                                            ${item.status_code}
+                                        </span>
+                                        <span class="ms-2">${new Date(item.created_at).toLocaleString()}</span>
+                                    </span>
+                                    <span>${item.execution_time.toFixed(2)}秒</span>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <strong>请求:</strong>
+                                        <div class="json-response" style="max-height: 150px;">
+                                            ${JSON.stringify(requestData, null, 2)}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <strong>响应:</strong>
+                                        <div class="json-response" style="max-height: 150px;">
+                                            ${item.response_data}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        $('#history-container').append(historyHtml);
+                    });
+                });
+            }
+        });
+    }
+    
+    // 使用多种方式确保应用初始化
+    $(document).ready(initApp);
+    
+    // 备用初始化方法，以防jQuery ready事件失败
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        // 如果页面已经加载完成，立即初始化
+        setTimeout(initApp, 1);
+    } else {
+        // 否则等待DOMContentLoaded事件
+        document.addEventListener('DOMContentLoaded', initApp);
+    }
+    
+    // 添加页面可见性检测
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            console.log('页面变为可见，检查应用状态');
+            // 如果页面变为可见，检查应用是否已初始化
+            if (!window.appInitialized) {
+                console.log('应用未初始化，重新初始化');
+                initApp();
+            }
+        }
+    });
+    
+    // 添加页面加载完成检测
+    window.addEventListener('load', function() {
+        console.log('页面完全加载完成');
+        // 设置一个标志，表示应用已初始化
+        window.appInitialized = true;
+    });
+</script>
+{% endblock %}
